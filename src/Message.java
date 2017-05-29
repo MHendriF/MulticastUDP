@@ -1,14 +1,15 @@
 import java.io.Serializable;
 
 public class Message implements Serializable{
-    public Message(int id, String msg, String source, String destination, int hop, String time, String location) {
+    public Message(int id, String msg, String source, String destination, int hop, String time, double latitude, double longitude) {
         this.id = id;
         this.msg = msg;
         this.source = source;
         this.destination = destination;
         this.hop = hop;
         this.time = time;
-        this.location = location;
+        this.latitude = latitude;
+        this.longitude = longitude;
     }
     
     Message(){
@@ -18,13 +19,9 @@ public class Message implements Serializable{
     }
     private static final long serialVersionUID = 1L;
     public String _ListMessage[] = new String [50];
-    private int id;
-    private String msg;
-    private String source;
-    private String destination;
-    private int hop;
-    private String time;
-    private String location;
+    private int id, hop;
+    private double latitude, longitude;
+    private String msg, source, destination, time;
     
     public int getId() {
         return id;
@@ -78,13 +75,18 @@ public class Message implements Serializable{
         return time;
     }
     
-    public String getLocation(){
-        return location;
+    public double getLatitude(){
+        return latitude;
+    }
+    
+    public double getLongitude(){
+        return longitude;
     }
     
     public String toString() {
         return "Id:" + getId() + " | Message: " + getMessage() + " | Source: " + getSource() 
                 +" | Destination: " + getDestination() + " | Hop: "+getHop()
-                +" | Time: " + getTime() + " | Location: " + getLocation();
+                +" | Expired: " + getTime() + " | Latitude: " + getLatitude()
+                + " | Longitude: " + getLongitude();
     }
 }

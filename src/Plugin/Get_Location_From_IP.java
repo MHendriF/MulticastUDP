@@ -8,7 +8,6 @@ package Plugin;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.URL;
- 
 
 public class Get_Location_From_IP {
     public Location_Use_Bean get_ip_Details(String ip) { 

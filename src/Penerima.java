@@ -1,22 +1,73 @@
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
-import java.net.MulticastSocket;
-import java.net.SocketException;
-import java.net.SocketTimeoutException;
-import java.net.UnknownHostException;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Timer;
-import java.util.Date;
-import java.util.TimerTask;
+import java.io.*;
+import java.net.*;
+import java.text.*;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class Penerima {
+    
+    static Location iploc=new Location();
+    
+    public Location IPDetails(String ip){
+        
+        String[] parts, parts2, parts3;
+        String key;
+        URL url;
+        int i = 0;
+        String strTemp = "";
+        String temporaray="";
+        String temp_array[]=null;
+        String temp[] = new String [150];
+        try {
+            
+//            key = "&auth=f95b478e-57cd-4a80-81c2-87436243ec4a";
+//            url = new URL("https://ipfind.co?ip="+ip+key);
+//            BufferedReader br = new BufferedReader(new InputStreamReader(url.openStream()));
+//            while (null != (strTemp = br.readLine())) {
+//                temporaray=strTemp;
+//            }
+            
+            String tes = "{\"ip_address\":\"202.46.129.77\",\"country\":\"Indonesia\",\"country_code\":\"ID\",\"continent\":\"Asia\",\"continent_code\":\"AS\",\"city\":\"Surabaya\",\"county\":\"Kota Surabaya\",\"region\":\"East Java\",\"region_code\":\"08\",\"timezone\":\"Asia\\/Jakarta\",\"owner\":null,\"longitude\":112.7508,\"latitude\":-7.2492,\"currency\":\"IDR\",\"languages\":[\"id\",\"en\",\"nl\",\"jv\"]}";
+            temporaray = tes;
+            temp_array=temporaray.split(";");
+            int length=temp_array.length;
+            //Get string in "string"
+            Pattern p = Pattern.compile("\"([^\"]*)\"");
+            Matcher m = p.matcher(temp_array[0]);
+
+            i = 0;
+            while (m.find()) {
+              temp[i] = m.group(1);
+              i++;
+            }
+            
+            parts = tes.split(",");
+            //parts = temporaray.split(",");
+            //To get Longitude
+            parts2 = parts[11].split(":");;
+            //To get Latitude
+            parts3 = parts[12].split(":");
+            
+            iploc.setIP(temp[1]);
+            iploc.setCountry(temp[3]);
+            iploc.setCity(temp[11]);
+            iploc.setLongitude(parts2[1]);
+            iploc.setLatitude(parts3[1]);
+            
+            System.out.println("IP address (Public) : "+temp[1]);
+            System.out.println("Country : "+temp[3]);
+            System.out.println("City : "+temp[11]);
+            System.out.println("Longitude : "+parts2[1]);
+            System.out.println("Latitude : "+parts3[1]);
+            System.out.println();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return iploc;
+    }
+    
     public static void main(String[] args) throws IOException, ParseException {
         //Address
         String multiCastAddress = "224.0.0.1";
@@ -29,7 +80,6 @@ public class Penerima {
         
         //Get ip address
         my_ip = InetAddress.getLocalHost().getHostAddress();
-        //Message _pesan = new Message();
  
         //Create Socket
         System.out.println("Create socket on address " + multiCastAddress + " and port " + multiCastPort + ".");
@@ -44,6 +94,23 @@ public class Penerima {
 	ScheduledTask st = new ScheduledTask(); // Instantiate SheduledTask class
 	time.schedule(st, 0, 1000); // Create Repetitively task for every 1 secs
         
+        //Check IP Global
+        URL url;
+        try
+        {
+            URL whatismyip = new URL("http://checkip.amazonaws.com");
+            BufferedReader in = new BufferedReader(new InputStreamReader(whatismyip.openStream()));
+            String ip = in.readLine(); //you get the IP as a String
+            //System.out.println("My IP Public is : "+ip);
+            Penerima findLocation = new Penerima();
+            findLocation.IPDetails(ip);
+
+        }
+        catch(IOException e){
+            e.printStackTrace();
+        }
+        
+        double latitude1a, longitude1a, latitude1b, longitude1b;
         //Receive data
         while (true) {
             System.out.println("Wating for datagram to be received...");
@@ -57,6 +124,11 @@ public class Penerima {
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
             date1 = sdf.parse(st.currentTime());
             
+            //Distance Location
+            //System.out.println("Latitude" + iploc.getLatitude());
+            latitude1a = Double.parseDouble(iploc.getLatitude());
+            longitude1a = Double.parseDouble(iploc.getLongitude());
+            
             //Deserialze object
             ByteArrayInputStream in = new ByteArrayInputStream(buffer);
             ObjectInputStream is = new ObjectInputStream(in);
@@ -64,15 +136,26 @@ public class Penerima {
                 Message message = (Message) is.readObject();
                 date2 = sdf.parse(message.getTime());
                 
+                LocationDistance loc1 = new LocationDistance("aaa", latitude1a, longitude1a);
+                LocationDistance loc2 = new LocationDistance("bbb", message.getLatitude(), message.getLongitude());
+                double distance = loc1.distanceTo(loc2);
+                //System.out.println(distance+" miles from " +loc1+" to "+loc2);
+                
+                //Check if distance so far
+                if(distance > 5000){
+                    System.out.println("Message could not be sent because of limited area...\n");
+                    s.leaveGroup(InetAddress.getByName(multiCastAddress));
+                    s.joinGroup(group);
+                }
                 //Check if message is expired
-                if(date1.compareTo(date2) > 0){
-                    System.out.println("Time limit access...");
+                else if(date1.compareTo(date2) > 0){
+                    System.out.println("Time limit access...\n");
                     s.leaveGroup(InetAddress.getByName(multiCastAddress));
                     s.joinGroup(group);
                 }
                 
                 else if(message.getHop() > MAXTTL){
-                    System.out.println("Send packet is limited...");
+                    System.out.println("Send packet is limited...\n");
                     s.leaveGroup(InetAddress.getByName(multiCastAddress));
                     s.joinGroup(group);
                     //break;
@@ -109,7 +192,7 @@ public class Penerima {
                     
                     //Send message again
                     Message message2 = new Message(nextid, message.getMessage(), message.getSource(), 
-                            message.getDestination(), nexthop, message.getTime(), message.getLocation());
+                            message.getDestination(), nexthop, message.getTime(), message.getLatitude(), message.getLongitude());
                     ByteArrayOutputStream baos = new ByteArrayOutputStream();
                     ObjectOutputStream os = new ObjectOutputStream(baos);
                     os.writeObject(message2);

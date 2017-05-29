@@ -4,12 +4,12 @@
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
         <group>
             <file>file:/C:/Users/lenovo/Documents/NetBeansProjects/MulticastUDP/src/Message.java</file>
+            <file>file:/C:/Users/lenovo/Documents/NetBeansProjects/MulticastUDP/src/LocationDistance.java</file>
             <file>file:/C:/Users/lenovo/Documents/NetBeansProjects/MulticastUDP/src/ScheduledTask.java</file>
-            <file>file:/C:/Users/lenovo/Documents/NetBeansProjects/MulticastUDP/src/Plugin/GetLocationExample.java</file>
-            <file>file:/C:/Users/lenovo/Documents/NetBeansProjects/MulticastUDP/src/Plugin/DateCompare.java</file>
+            <file>file:/C:/Users/lenovo/Documents/NetBeansProjects/MulticastUDP/src/Penerima2.java</file>
+            <file>file:/C:/Users/lenovo/Documents/NetBeansProjects/MulticastUDP/src/Location.java</file>
             <file>file:/C:/Users/lenovo/Documents/NetBeansProjects/MulticastUDP/src/Pengirim.java</file>
             <file>file:/C:/Users/lenovo/Documents/NetBeansProjects/MulticastUDP/src/Penerima.java</file>
-            <file>file:/C:/Users/lenovo/Documents/NetBeansProjects/MulticastUDP/src/multicastudp/SchedulerMain.java</file>
         </group>
     </open-files>
 </project-private>
