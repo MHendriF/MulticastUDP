@@ -2,11 +2,11 @@
 
 #### Have fun to learn this project.
 
-## Referensi
+## Description
 Java program multicast using Delay Tolerat Networking
  - Maximum Hop
  - Maximum Time
- - Maximum Distace
+ - Maximum Distance
 
 ## Referensi
 https://www.youtube.com/watch?v=HEjNqhWOcRY&t=503s

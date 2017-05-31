@@ -28,7 +28,7 @@ public class Pengirim {
         s.joinGroup(group);
  
         //Prepare Data
-        Message message = new Message(1, "Tes", my_ip, "10.151.32.32", 0, "2017/05/30 04:49:20", 40.366633, 74.640832);
+        Message message = new Message(0, "esss", my_ip, "10.151.32.32", 0, "2017/06/1 04:49:20", 40.366633, 74.640832);
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         ObjectOutputStream os = new ObjectOutputStream(baos);
         os.writeObject(message);

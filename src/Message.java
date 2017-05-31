@@ -19,9 +19,9 @@ public class Message implements Serializable{
     }
     private static final long serialVersionUID = 1L;
     public String _ListMessage[] = new String [50];
-    private int id, hop;
-    private double latitude, longitude;
-    private String msg, source, destination, time;
+    public int id, hop;
+    public double latitude, longitude;
+    public String msg, source, destination, time;
     
     public int getId() {
         return id;
@@ -33,10 +33,6 @@ public class Message implements Serializable{
 
     public String getMessage() {
         return msg;
-    }
-
-    public void setMessage(String msg) {
-        this.msg = msg;
     }
 
     public String getDestination() {
@@ -81,6 +77,17 @@ public class Message implements Serializable{
     
     public double getLongitude(){
         return longitude;
+    }
+    
+    public void setMessage(int id, String msg, String source, String destination, int hop, String time, double latitude, double longitude) {
+        this.id = id;
+        this.msg = msg;
+        this.source = source;
+        this.destination = destination;
+        this.hop = hop;
+        this.time = time;
+        this.latitude = latitude;
+        this.longitude = longitude;
     }
     
     public String toString() {

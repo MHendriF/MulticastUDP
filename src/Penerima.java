@@ -17,7 +17,7 @@ public class Penerima {
         int i = 0;
         String strTemp = "";
         String temporaray="";
-        String temp_array[]=null;
+        
         String temp[] = new String [150];
         try {
             
@@ -29,21 +29,21 @@ public class Penerima {
 //            }
             
             String tes = "{\"ip_address\":\"202.46.129.77\",\"country\":\"Indonesia\",\"country_code\":\"ID\",\"continent\":\"Asia\",\"continent_code\":\"AS\",\"city\":\"Surabaya\",\"county\":\"Kota Surabaya\",\"region\":\"East Java\",\"region_code\":\"08\",\"timezone\":\"Asia\\/Jakarta\",\"owner\":null,\"longitude\":112.7508,\"latitude\":-7.2492,\"currency\":\"IDR\",\"languages\":[\"id\",\"en\",\"nl\",\"jv\"]}";
+            String tes2 = "{\"ip_address\":\"202.67.41.14\",\"country\":\"Indonesia\",\"country_code\":\"ID\",\"continent\":\"Asia\",\"continent_code\":\"AS\",\"city\":\"Pandeyan\",\"county\":null,\"region\":\"Yogyakarta\",\"region_code\":\"10\",\"timezone\":\"Asia\\/Jakarta\",\"owner\":null,\"longitude\":110.4806,\"latitude\":-7.6925,\"currency\":\"IDR\",\"languages\":[\"id\",\"en\",\"nl\",\"jv\"]}";
             temporaray = tes;
-            temp_array=temporaray.split(";");
-            int length=temp_array.length;
+            
             //Get string in "string"
             Pattern p = Pattern.compile("\"([^\"]*)\"");
-            Matcher m = p.matcher(temp_array[0]);
-
+            Matcher m = p.matcher(temporaray);
+            
             i = 0;
             while (m.find()) {
               temp[i] = m.group(1);
               i++;
             }
             
-            parts = tes.split(",");
-            //parts = temporaray.split(",");
+            //parts = tes.split(",");
+            parts = temporaray.split(",");
             //To get Longitude
             parts2 = parts[11].split(":");;
             //To get Latitude
@@ -68,15 +68,20 @@ public class Penerima {
         return iploc;
     }
     
-    public static void main(String[] args) throws IOException, ParseException {
+    public static void main(String[] args) throws IOException, ParseException, InterruptedException {
         //Address
         String multiCastAddress = "224.0.0.1";
         final int multiCastPort = 52684;
         final int bufferSize = 1024 * 4; //Maximum size of transfer object
         String my_ip;
         int nexthop, nextid=0;
-        final int MAXTTL = 1000;
+        final int MAXTTL = 10;
         Date date1, date2;
+        String _MessageOnly[] = new String [50];
+        
+        for(int i=0; i<_MessageOnly.length; i++){
+            _MessageOnly[i] = null;  
+        }
         
         //Get ip address
         my_ip = InetAddress.getLocalHost().getHostAddress();
@@ -93,6 +98,8 @@ public class Penerima {
         Timer time = new Timer(); // Instantiate Timer Object
 	ScheduledTask st = new ScheduledTask(); // Instantiate SheduledTask class
 	time.schedule(st, 0, 1000); // Create Repetitively task for every 1 secs
+        
+        ArrayList<Message> arr_msg=new ArrayList<Message>();  
         
         //Check IP Global
         URL url;
@@ -118,14 +125,11 @@ public class Penerima {
             //Create buffer
             byte[] buffer = new byte[bufferSize];
             s.receive(new DatagramPacket(buffer, bufferSize, group, multiCastPort));
-            System.out.println("Datagram received!");
-            
             //Get Current Time
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
             date1 = sdf.parse(st.currentTime());
             
             //Distance Location
-            //System.out.println("Latitude" + iploc.getLatitude());
             latitude1a = Double.parseDouble(iploc.getLatitude());
             longitude1a = Double.parseDouble(iploc.getLongitude());
             
@@ -134,79 +138,123 @@ public class Penerima {
             ObjectInputStream is = new ObjectInputStream(in);
             try {
                 Message message = (Message) is.readObject();
-                date2 = sdf.parse(message.getTime());
                 
-                LocationDistance loc1 = new LocationDistance("aaa", latitude1a, longitude1a);
-                LocationDistance loc2 = new LocationDistance("bbb", message.getLatitude(), message.getLongitude());
-                double distance = loc1.distanceTo(loc2);
-                //System.out.println(distance+" miles from " +loc1+" to "+loc2);
-                
-                //Check if distance so far
-                if(distance > 5000){
-                    System.out.println("Message could not be sent because of limited area...\n");
-                    s.leaveGroup(InetAddress.getByName(multiCastAddress));
-                    s.joinGroup(group);
-                }
-                //Check if message is expired
-                else if(date1.compareTo(date2) > 0){
-                    System.out.println("Time limit access...\n");
-                    s.leaveGroup(InetAddress.getByName(multiCastAddress));
-                    s.joinGroup(group);
-                }
-                
-                else if(message.getHop() > MAXTTL){
-                    System.out.println("Send packet is limited...\n");
-                    s.leaveGroup(InetAddress.getByName(multiCastAddress));
-                    s.joinGroup(group);
-                    //break;
-                }
-                
-                else if(my_ip.equals(message.getDestination())){
-                    System.out.println("Pesan sampai");
-                    System.out.println("Message object received : "+message);
-                    System.out.println("ID : "+message.getId());
-                    System.out.println("Message : "+message.getMessage());
-                    System.out.println("Source : "+message.getSource());
-                    System.out.println("Destination : "+message.getDestination());
-                    System.out.println("Hop : "+message.getHop());
-                }
-                else{
-                    for(int i=0; i<message._ListMessage.length; i++){
-                        if(message.checkMessage(i) == null){
-                            message.addMessage(i, message.getMessage());
+                for(int i=0; i<_MessageOnly.length; i++){
+                    if(_MessageOnly[i] == null){
+                        nexthop = message.getHop() + 1;
+                        nextid = message.getId() + 1;
+                        message.setHop(nexthop);
+                        
+                        date2 = sdf.parse(message.getTime());
+                        LocationDistance loc1 = new LocationDistance("aaa", latitude1a, longitude1a);
+                        LocationDistance loc2 = new LocationDistance("bbb", message.getLatitude(), message.getLongitude());
+                        double distance = loc1.distanceTo(loc2);
+                        
+                        if(distance > 5000){
+                            System.out.println("Message could not be sent because of limited area...\n");
                             break;
                         }
-                        else if(!message.checkMessage(i).equals(message.getMessage())){
-                            message.addMessage(i, message.getMessage());
-                            break;
-                        } 
-                        else if(message.checkMessage(i).equals(message.getMessage())){
-                            System.out.println("Pesan sudah pernah diterima");
+                        
+                        else if(date1.compareTo(date2) > 0){
+                            System.out.println("Message could not be sent because message is expired...\n");
                             break;
                         }
+
+                        else if(message.getHop() > MAXTTL){
+                            System.out.println("Message could not be sent because hop is limited...\n");
+                            break;
+                        }
+                        
+                        else
+                        {
+                            _MessageOnly[i] = message.getMessage();
+                            //add message object to array list
+                            arr_msg.add(new Message(nextid, message.getMessage(), message.getSource(), 
+                                message.getDestination(), nexthop, message.getTime(), message.getLatitude(), message.getLongitude()));
+                            break;
+                        }
+                        
                     }
-                    //Increament hop
-                    nexthop = message.getHop() + 1;
-                    nextid = message.getId() + 1;
-                    message.setHop(nexthop);
-                    
-                    //Send message again
-                    Message message2 = new Message(nextid, message.getMessage(), message.getSource(), 
-                            message.getDestination(), nexthop, message.getTime(), message.getLatitude(), message.getLongitude());
-                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                    ObjectOutputStream os = new ObjectOutputStream(baos);
-                    os.writeObject(message2);
-                    byte[] data = baos.toByteArray();
-                    s.send(new DatagramPacket(data, data.length, group, multiCastPort));
-                    Thread.sleep(2000);
-                    System.out.println("Message object received: "+message);
+                    else if(!_MessageOnly[i].equals(message.getMessage()) && _MessageOnly[i] != null){
+                        System.out.println("Masuk");
+                    } 
+                    else if(_MessageOnly[i].equals(message.getMessage())){
+                        nexthop = message.getHop() + 1;
+                        nextid = message.getId() + 1;
+                        System.out.println("Message is already exist!");
+                        
+                        Thread.sleep(2000);
+                            
+                        
+                        //check if arrayist si empty or not
+                        boolean retval = arr_msg.isEmpty();
+                        if (retval == true) {
+                            arr_msg.add(new Message(nextid, message.getMessage(), message.getSource(), 
+                                message.getDestination(), nexthop, message.getTime(), message.getLatitude(), message.getLongitude()));
+                        }
+                        else {
+                            arr_msg.set(i, new Message(nextid, message.getMessage(), message.getSource(), 
+                                message.getDestination(), nexthop, message.getTime(), message.getLatitude(), message.getLongitude()));
+                        }
+                        break;
+                    }
                 }
+                
+                Iterator itr=arr_msg.iterator(); 
+                int a=0;
+                //traversing elements of ArrayList object
+                while(itr.hasNext()){
+                    Message pesan=(Message)itr.next();
+                    //System.out.println(pesan.id+" "+pesan.msg+" "+pesan.time);  
+                    date2 = sdf.parse(pesan.time);
+                    LocationDistance loc1 = new LocationDistance("aaa", latitude1a, longitude1a);
+                    LocationDistance loc2 = new LocationDistance("bbb", pesan.latitude, pesan.longitude);
+                    double distance = loc1.distanceTo(loc2);
+                    
+                    //Check if distance so far
+                    if(distance > 5000){
+                        System.out.println("Message could not be sent because of limited area...\n");
+                        arr_msg.remove(a);
+                    }
+                    //Check if message is expired
+                    else if(date1.compareTo(date2) > 0){
+                        System.out.println("Message could not be sent because message is expired...\n");
+                        arr_msg.remove(a);
+                    }
+
+                    else if(message.getHop() > MAXTTL){
+                        System.out.println("Message could not be sent because hop is limited...\n");
+                        arr_msg.remove(a);
+                        break;
+                    }
+
+                    else if(my_ip.equals(message.getDestination())){
+                        System.out.println("Pesan sampai");
+                        System.out.println("Message object received : "+message);
+                        System.out.println("ID : "+message.getId());
+                        System.out.println("Message : "+message.getMessage());
+                        System.out.println("Source : "+message.getSource());
+                        System.out.println("Destination : "+message.getDestination());
+                        System.out.println("Hop : "+message.getHop());
+                    }
+                    else{
+                        System.out.println("Send Message : "+pesan);
+                        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                        ObjectOutputStream os = new ObjectOutputStream(baos);
+                        os.writeObject(pesan);
+                        byte[] data = baos.toByteArray();
+                        s.send(new DatagramPacket(data, data.length, group, multiCastPort));
+                        Thread.sleep(1000);
+                    }
+                 
+                }  
+
                 
             } 
             catch(SocketTimeoutException e){
                     System.out.println("Timeout reached!!! " + e);
             }
-            catch (IOException | ClassNotFoundException | InterruptedException e) {
+            catch (IOException | ClassNotFoundException e) {
                 e.printStackTrace();
             }
  
