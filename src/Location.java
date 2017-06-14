@@ -4,6 +4,8 @@ public class Location {
     private String city;
     private String longitude;
     private String latitude;
+    double bujur;
+    double lintang;
 
     public void setIP(String ip) {
 	this.ip_address = ip;
@@ -34,15 +36,17 @@ public class Location {
 	this.longitude = longitude;
     }
     
-    public String getLongitude() {
-        return longitude;
+    public double getLongitude() {
+        bujur = Double.valueOf(longitude);
+        return bujur;
     }
     
     public void setLatitude(String latitude) {
 	this.latitude = latitude;
     }
     
-    public String getLatitude() {
-        return latitude;
+    public double getLatitude() {
+        lintang = Double.parseDouble(latitude);
+        return lintang;
     }
 }

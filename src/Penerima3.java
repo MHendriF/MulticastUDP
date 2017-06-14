@@ -5,7 +5,7 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class Penerima {
+public class Penerima3 {
     
     static Location iploc=new Location();
     
@@ -70,12 +70,12 @@ public class Penerima {
     
     public static void main(String[] args) throws IOException, ParseException, InterruptedException {
         //Address
-        String multiCastAddress = "224.0.0.1";
-        final int multiCastPort = 52684;
+        String multiCastAddress = "224.1.10.2";
+        final int multiCastPort = 5268;
         final int bufferSize = 1024 * 4; //Maximum size of transfer object
-        String my_ip;
+        String my_ip, cek_message;
         int nexthop, nextid=0;
-        int NOWTTL, MAXTTL = 0;
+        int MAXTTL=0, NOWTTL = 0;
         Date date1, date2;
         String _MessageOnly[] = new String [50];
         
@@ -95,11 +95,12 @@ public class Penerima {
         s.joinGroup(group);
         
         //Time Schedule
-        Timer time = new Timer();                   // Instantiate Timer Object
-	ScheduledTask st = new ScheduledTask();     // Instantiate SheduledTask class
-	time.schedule(st, 0, 1000);                 // Create Repetitively task for every 1 secs
+        Timer time = new Timer();               // Instantiate Timer Object
+	ScheduledTask st = new ScheduledTask(); // Instantiate SheduledTask class
+	time.schedule(st, 0, 1000);             // Create Repetitively task for every 1 secs
         
         ArrayList<Message> arr_msg=new ArrayList<Message>();  
+        double latitude1a=0, longitude1a=0, latitude1b=0, longitude1b=0;
         
         //Check IP Global
         URL url;
@@ -109,7 +110,7 @@ public class Penerima {
             BufferedReader in = new BufferedReader(new InputStreamReader(whatismyip.openStream()));
             String ip = in.readLine(); //you get the IP as a String
             //System.out.println("My IP Public is : "+ip);
-            Penerima findLocation = new Penerima();
+            Penerima2 findLocation = new Penerima2();
             findLocation.IPDetails(ip);
 
         }
@@ -117,34 +118,34 @@ public class Penerima {
             e.printStackTrace();
         }
         
-        double latitude1a, longitude1a, latitude1b, longitude1b;
         //Receive data
         while (true) {
             System.out.println("Wating for datagram to be received...");
- 
-            //Create buffer
-            byte[] buffer = new byte[bufferSize];
-            s.receive(new DatagramPacket(buffer, bufferSize, group, multiCastPort));
-            //Get Current Time
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
-            date1 = sdf.parse(st.currentTime());
             
-            //Distance Location
-            latitude1a = iploc.getLatitude();
-            longitude1a = iploc.getLongitude();
+                //Create buffer
+                byte[] buffer = new byte[bufferSize];
+                s.receive(new DatagramPacket(buffer, bufferSize, group, multiCastPort));
+                //Get Current Time
+                SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+                date1 = sdf.parse(st.currentTime());
+                
+                System.out.println("tes1");
+                //Distance Location
+                latitude1a = iploc.getLatitude();
+                longitude1a = iploc.getLongitude();
+                System.out.println("tes2");
+
+                //Deserialze object
+                ByteArrayInputStream in = new ByteArrayInputStream(buffer);
+                ObjectInputStream is = new ObjectInputStream(in);
             
-            //Deserialze object
-            ByteArrayInputStream in = new ByteArrayInputStream(buffer);
-            ObjectInputStream is = new ObjectInputStream(in);
             try {
                 Message message = (Message) is.readObject();
-                MAXTTL = message.getMaxHop();
                 
+                cek_message = message.getMessage();
+                System.out.println("tes3");
                 for(int i=0; i<_MessageOnly.length; i++){
                     if(_MessageOnly[i] == null){
-                        nexthop = message.getHop() + 1;
-                        nextid = message.getId() + 1;
-                        message.setHop(nexthop);
                         
                         date2 = sdf.parse(message.getTime());
                         LocationDistance loc1 = new LocationDistance("aaa", latitude1a, longitude1a);
@@ -166,37 +167,21 @@ public class Penerima {
                             break;
                         }
                         
-                        else
-                        {
+                        else{
                             _MessageOnly[i] = message.getMessage();
-                            //add message object to array list
-                            arr_msg.add(new Message(nextid, message.getMessage(), message.getSource(), 
-                                message.getDestination(), message.getHop(), message.getMaxHop(),message.getTime(), message.getLatitude(), message.getLongitude()));
+                            arr_msg.add(new Message(nextid, message.getMessage(), message.getSource(), message.getDestination(), message.getHop(), 
+                                    message.getMaxHop(), message.getTime(), message.getLatitude(), message.getLongitude()));
                             break;
                         }
                         
                     }
-                    else if(!_MessageOnly[i].equals(message.getMessage()) && _MessageOnly[i] != null){
+                    else if(!_MessageOnly[i].equals(cek_message)&& _MessageOnly[i] != null){
                         System.out.println("Masuk");
                     } 
-                    else if(_MessageOnly[i].equals(message.getMessage())){
+                    else if(_MessageOnly[i].equals(cek_message)){
                         nexthop = message.getHop() + 1;
                         nextid = message.getId() + 1;
                         System.out.println("Message is already exist!");
-                        
-                        Thread.sleep(2000);
-                            
-                        
-                        //check if arrayist si empty or not
-                        boolean retval = arr_msg.isEmpty();
-                        if (retval == true) {
-                            arr_msg.add(new Message(nextid, message.getMessage(), message.getSource(), 
-                                message.getDestination(), nexthop, message.getMaxHop(),message.getTime(), message.getLatitude(), message.getLongitude()));
-                        }
-                        else {
-                            arr_msg.set(i, new Message(nextid, message.getMessage(), message.getSource(), 
-                                message.getDestination(), nexthop, message.getMaxHop(),message.getTime(), message.getLatitude(), message.getLongitude()));
-                        }
                         break;
                     }
                 }
@@ -207,9 +192,12 @@ public class Penerima {
                 while(itr.hasNext()){
                     Message pesan=(Message)itr.next();
                     NOWTTL = pesan.getHop();
+                    
                     date2 = sdf.parse(pesan.time);
                     LocationDistance loc1 = new LocationDistance("aaa", latitude1a, longitude1a);
+                    //LocationDistance loc2 = new LocationDistance("bbb", pesan.getLatitude(), pesan.getLongitude());
                     LocationDistance loc2 = new LocationDistance("bbb", pesan.latitude, pesan.longitude);
+                    
                     double distance = loc1.distanceTo(loc2);
                     
                     //Check if distance so far
@@ -223,7 +211,7 @@ public class Penerima {
                         arr_msg.remove(a);
                     }
 
-                    else if(message.getHop() > MAXTTL){
+                    else if(NOWTTL > pesan.getMaxHop()){
                         System.out.println("Message could not be sent because hop is limited...\n");
                         arr_msg.remove(a);
                         break;
@@ -249,9 +237,9 @@ public class Penerima {
                         os.writeObject(pesan);
                         byte[] data = baos.toByteArray();
                         s.send(new DatagramPacket(data, data.length, group, multiCastPort));
+                        
                         Thread.sleep(1000);
                     }
-                 
                 }  
 
                 

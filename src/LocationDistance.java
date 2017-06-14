@@ -27,6 +27,10 @@ public class LocationDistance {
         // each degree on a great circle of Earth is 60 nautical miles
         double nauticalMiles = 60 * Math.toDegrees(angle);
         double statuteMiles = STATUTE_MILES_PER_NAUTICAL_MILE * nauticalMiles;
+        
+        //convert mile to meter
+        //statuteMiles = statuteMiles * 1609.34;
+                
         return statuteMiles;
     }
 
@@ -34,15 +38,12 @@ public class LocationDistance {
     public String toString() {
         return name + " (" + latitude2 + ", " + longitude2 + ")";
     }
-
-
-    // test client
+    
     public static void main(String[] args) {
-        LocationDistance loc1 = new LocationDistance("PRINCETON_NJ", 40.366633, 74.640832);
-        LocationDistance loc2 = new LocationDistance("ITHACA_NY",    42.443087, 76.488707);  
-        double distance = loc1.distanceTo(loc2);
-        System.out.println(distance+" miles from " +loc1+" to "+loc2);
+//        LocationDistance loc1 = new LocationDistance("PRINCETON_NJ", 40.366633, 74.640832);
+//        LocationDistance loc2 = new LocationDistance("ITHACA_NY",    42.443087, 76.488707);  
+//        double distance = loc1.distanceTo(loc2);
+//        System.out.println(distance+" miles from " +loc1+" to "+loc2);
     }
-
 
 }

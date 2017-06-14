@@ -21,16 +21,12 @@ public class Penerima2 {
         String temp[] = new String [150];
         try {
             
-//            key = "&auth=f95b478e-57cd-4a80-81c2-87436243ec4a";
-//            url = new URL("https://ipfind.co?ip="+ip+key);
-//            BufferedReader br = new BufferedReader(new InputStreamReader(url.openStream()));
-//            while (null != (strTemp = br.readLine())) {
-//                temporaray=strTemp;
-//            }
-            
-            String tes = "{\"ip_address\":\"202.46.129.77\",\"country\":\"Indonesia\",\"country_code\":\"ID\",\"continent\":\"Asia\",\"continent_code\":\"AS\",\"city\":\"Surabaya\",\"county\":\"Kota Surabaya\",\"region\":\"East Java\",\"region_code\":\"08\",\"timezone\":\"Asia\\/Jakarta\",\"owner\":null,\"longitude\":112.7508,\"latitude\":-7.2492,\"currency\":\"IDR\",\"languages\":[\"id\",\"en\",\"nl\",\"jv\"]}";
-            String tes2 = "{\"ip_address\":\"202.67.41.14\",\"country\":\"Indonesia\",\"country_code\":\"ID\",\"continent\":\"Asia\",\"continent_code\":\"AS\",\"city\":\"Pandeyan\",\"county\":null,\"region\":\"Yogyakarta\",\"region_code\":\"10\",\"timezone\":\"Asia\\/Jakarta\",\"owner\":null,\"longitude\":110.4806,\"latitude\":-7.6925,\"currency\":\"IDR\",\"languages\":[\"id\",\"en\",\"nl\",\"jv\"]}";
-            temporaray = tes;
+            key = "&auth=f95b478e-57cd-4a80-81c2-87436243ec4a";
+            url = new URL("https://ipfind.co?ip="+ip+key);
+            BufferedReader br = new BufferedReader(new InputStreamReader(url.openStream()));
+            while (null != (strTemp = br.readLine())) {
+                temporaray=strTemp;
+            }
             
             //Get string in "string"
             Pattern p = Pattern.compile("\"([^\"]*)\"");
@@ -70,12 +66,11 @@ public class Penerima2 {
     
     public static void main(String[] args) throws IOException, ParseException, InterruptedException {
         //Address
-        String multiCastAddress = "224.0.0.1";
-        final int multiCastPort = 52684;
+        String multiCastAddress = "224.1.10.2";
+        final int multiCastPort = 5268;
         final int bufferSize = 1024 * 4; //Maximum size of transfer object
-        String my_ip;
-        int nexthop, nextid=0;
-        final int MAXTTL = 10;
+        String my_ip, current_message;
+        int NOWTTL, MAXTTL, NEXTID = 0;
         Date date1, date2;
         String _MessageOnly[] = new String [50];
         
@@ -85,7 +80,6 @@ public class Penerima2 {
         
         //Get ip address
         my_ip = InetAddress.getLocalHost().getHostAddress();
- 
         //Create Socket
         System.out.println("Create socket on address " + multiCastAddress + " and port " + multiCastPort + ".");
         System.out.println("My IP is : " + my_ip);
@@ -130,27 +124,27 @@ public class Penerima2 {
             date1 = sdf.parse(st.currentTime());
             
             //Distance Location
-            latitude1a = Double.parseDouble(iploc.getLatitude());
-            longitude1a = Double.parseDouble(iploc.getLongitude());
+            latitude1a = iploc.getLatitude();
+            longitude1a = iploc.getLongitude();
             
             //Deserialze object
             ByteArrayInputStream in = new ByteArrayInputStream(buffer);
             ObjectInputStream is = new ObjectInputStream(in);
             try {
                 Message message = (Message) is.readObject();
+                MAXTTL = message.getMaxHop();
+                NEXTID = message.getId();
+                current_message = message.getMessage();
                 
                 for(int i=0; i<_MessageOnly.length; i++){
                     if(_MessageOnly[i] == null){
-                        nexthop = message.getHop() + 1;
-                        nextid = message.getId() + 1;
-                        message.setHop(nexthop);
                         
                         date2 = sdf.parse(message.getTime());
                         LocationDistance loc1 = new LocationDistance("aaa", latitude1a, longitude1a);
                         LocationDistance loc2 = new LocationDistance("bbb", message.getLatitude(), message.getLongitude());
                         double distance = loc1.distanceTo(loc2);
-                        
-                        if(distance > 5000){
+                        System.out.println("Distance : " + distance + " miles");
+                        if(distance > 7000){
                             System.out.println("Message could not be sent because of limited area...\n");
                             break;
                         }
@@ -169,33 +163,15 @@ public class Penerima2 {
                         {
                             _MessageOnly[i] = message.getMessage();
                             //add message object to array list
-                            arr_msg.add(new Message(nextid, message.getMessage(), message.getSource(), 
-                                message.getDestination(), nexthop, message.getTime(), message.getLatitude(), message.getLongitude()));
+                            arr_msg.add(new Message(NEXTID, message.getMessage(), message.getSource(), 
+                                message.getDestination(), message.getId(), message.getMaxHop(), message.getTime(), message.getLatitude(), message.getLongitude()));
                             break;
                         }
                         
                     }
-                    else if(!_MessageOnly[i].equals(message.getMessage()) && _MessageOnly[i] != null){
-                        System.out.println("Masuk");
-                    } 
-                    else if(_MessageOnly[i].equals(message.getMessage())){
-                        nexthop = message.getHop() + 1;
-                        nextid = message.getId() + 1;
-                        System.out.println("Message is already exist!");
+                 else if(_MessageOnly[i] != null && _MessageOnly[i].equals(current_message)){
+                       System.out.println("Message is already exist!");
                         
-                        Thread.sleep(2000);
-                            
-                        
-                        //check if arrayist si empty or not
-                        boolean retval = arr_msg.isEmpty();
-                        if (retval == true) {
-                            arr_msg.add(new Message(nextid, message.getMessage(), message.getSource(), 
-                                message.getDestination(), nexthop, message.getTime(), message.getLatitude(), message.getLongitude()));
-                        }
-                        else {
-                            arr_msg.set(i, new Message(nextid, message.getMessage(), message.getSource(), 
-                                message.getDestination(), nexthop, message.getTime(), message.getLatitude(), message.getLongitude()));
-                        }
                         break;
                     }
                 }
@@ -205,7 +181,9 @@ public class Penerima2 {
                 //traversing elements of ArrayList object
                 while(itr.hasNext()){
                     Message pesan=(Message)itr.next();
-                    //System.out.println(pesan.id+" "+pesan.msg+" "+pesan.time);  
+                    NOWTTL = pesan.getHop();
+                    NEXTID = pesan.getId();
+                    
                     date2 = sdf.parse(pesan.time);
                     LocationDistance loc1 = new LocationDistance("aaa", latitude1a, longitude1a);
                     LocationDistance loc2 = new LocationDistance("bbb", pesan.latitude, pesan.longitude);
@@ -241,15 +219,18 @@ public class Penerima2 {
                         System.out.println("Send Message : "+pesan);
                         ByteArrayOutputStream baos = new ByteArrayOutputStream();
                         ObjectOutputStream os = new ObjectOutputStream(baos);
+                        
+                        NOWTTL++;
+                        NEXTID++;
+                        pesan.setId(NEXTID);
+                        pesan.setHop(NOWTTL);
+                        
                         os.writeObject(pesan);
                         byte[] data = baos.toByteArray();
                         s.send(new DatagramPacket(data, data.length, group, multiCastPort));
                         Thread.sleep(1000);
                     }
-                 
                 }  
-
-                
             } 
             catch(SocketTimeoutException e){
                     System.out.println("Timeout reached!!! " + e);
